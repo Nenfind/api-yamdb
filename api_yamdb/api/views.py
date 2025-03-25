@@ -32,7 +32,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
         title_id = self.kwargs.get('title_id')
         review_id = self.kwargs.get('review_id')
         return get_object_or_404(
-            Reviews,
+            Review,
             id=review_id,
             title_id=title_id
         )
