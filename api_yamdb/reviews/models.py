@@ -39,6 +39,7 @@ class Reviews(models.Model):
 
 
 class RatingTitles(models.Model):
+    """Рейтинг на основе отзывов."""
     title = models.OneToOneField(
         Titles,
         on_delete=models.CASCADE,
