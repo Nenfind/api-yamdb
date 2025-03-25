@@ -5,10 +5,10 @@ from django.db import models
 User = get_user_model()
 
 
-class Reviews(models.Model):
+class Review(models.Model):
     """Отзывы к произведению."""
-    titles = models.ForeignKey(
-        Titles,
+    title = models.ForeignKey(
+        Title,
         on_delete=models.CASCADE,
         verbose_name='Произведения',
         related_name='reviews'
@@ -37,11 +37,18 @@ class Reviews(models.Model):
             )
         )
 
+    def save(self, *args, **kwargs):
+        """При сохранении отзыва обновляем рейтинг."""
+        super().save(*args, **kwargs)
+        title_rating, created = RatingTitle.objects.get_or_create(
+            title=self.titles)
+        title_rating.update_rating()
 
-class RatingTitles(models.Model):
+
+class RatingTitle(models.Model):
     """Рейтинг на основе отзывов."""
     title = models.OneToOneField(
-        Titles,
+        Title,
         on_delete=models.CASCADE,
         related_name='title_rating',
         verbose_name='Произведение'
@@ -64,12 +71,13 @@ class RatingTitles(models.Model):
         self.save()
 
 
-class Comments(models.Model):
+class Comment(models.Model):
     """Коментарии к отзывам."""
     reviews = models.ForeignKey(
-        Reviews,
+        Review,
         on_delete=models.CASCADE,
-        verbose_name='Отзывы на произведения'
+        verbose_name='Отзывы на произведения',
+        related_name='comments'
     )
     text = models.TextField('Текст коментария')
     author = models.ForeignKey(
