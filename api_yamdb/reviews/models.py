@@ -65,7 +65,7 @@ class RatingTitle(models.Model):
         Title,
         on_delete=models.CASCADE,
         related_name='title_rating',
-        verbose_name='Произведение'
+        verbose_name='Произведение',
     )
     rating = models.IntegerField(
         'Рейтинг',
