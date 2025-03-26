@@ -5,6 +5,11 @@ from django.db import models
 User = get_user_model()
 
 
+class Title(models.Model):
+
+    name = models.TextField('yfpdfybt')
+
+
 class Review(models.Model):
     """Отзывы к произведению."""
     title = models.ForeignKey(
@@ -19,7 +24,7 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Автор'
     )
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
         'Оценка',
         validators=(
             MinValueValidator(1, message='Оценка не может быть меньше 1.'),
@@ -32,17 +37,30 @@ class Review(models.Model):
         ordering = ('-pub_date',)
         constraints = (
             models.UniqueConstraint(
-                fields=('author', 'titles'),
+                fields=('author', 'title'),
                 name='unique_author_title'
-            )
+            ),
         )
 
     def save(self, *args, **kwargs):
         """При сохранении отзыва обновляем рейтинг."""
         super().save(*args, **kwargs)
-        title_rating, created = RatingTitle.objects.get_or_create(
-            title=self.titles)
-        title_rating.update_rating()
+        self.update_title_rating(self.title_id)
+
+    def delete(self, *args, **kwargs):
+        """При удалении отзыва обновляем рейтинг."""
+        title_id = self.title_id
+        super().delete(*args, **kwargs)
+        self.__class__.update_title_rating(title_id)
+
+    @classmethod
+    def update_title_rating(cls, title_id=None):
+        """Обновляет рейтинг произведения."""
+        try:
+            rating_title = RatingTitle.objects.get(title_id=title_id)
+            rating_title.update_rating()
+        except RatingTitle.DoesNotExist:
+            RatingTitle.objects.create(title_id=title_id).update_rating()
 
 
 class RatingTitle(models.Model):
@@ -73,7 +91,7 @@ class RatingTitle(models.Model):
 
 class Comment(models.Model):
     """Коментарии к отзывам."""
-    reviews = models.ForeignKey(
+    review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         verbose_name='Отзывы на произведения',

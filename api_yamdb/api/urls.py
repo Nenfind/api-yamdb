@@ -5,12 +5,12 @@ from api.views import CommentsViewSet, ReviewsViewSet
 
 router_v1 = DefaultRouter()
 router_v1.register(
-    r'titles/(?P<title_id>[\w.@+-]+)/reviews/(?P<review_id>[\w.@+-]+)',
+    r'titles/(?P<title_id>\d+)/reviews',
     ReviewsViewSet,
     basename='reviews'
 )
 router_v1.register(
-    r'titles/(?P<title_id>[\w.@+-]+)/reviews/(?P<review_id>[\w.@+-]+)/comments/(?P<comment_id>[\w.@+-]+)',
+    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments/',
     CommentsViewSet,
     basename='comments'
 )
