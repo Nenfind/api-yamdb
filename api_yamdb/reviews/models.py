@@ -6,8 +6,7 @@ User = get_user_model()
 
 
 class Title(models.Model):
-
-    name = models.TextField('yfpdfybt')
+    name = models.TextField(default='Что то')
 
 
 class Review(models.Model):
@@ -56,11 +55,8 @@ class Review(models.Model):
     @classmethod
     def update_title_rating(cls, title_id=None):
         """Обновляет рейтинг произведения."""
-        try:
-            rating_title = RatingTitle.objects.get(title_id=title_id)
-            rating_title.update_rating()
-        except RatingTitle.DoesNotExist:
-            RatingTitle.objects.create(title_id=title_id).update_rating()
+        rating_title, _ = RatingTitle.objects.get_or_create(title_id=title_id)
+        rating_title.update_rating()
 
 
 class RatingTitle(models.Model):
