@@ -6,8 +6,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 
-from .models import Category, Genre, Title
-from reviews.models import Comment, Review
+from reviews.models import Comment, Review, Category, Genre, Title
 
 User = get_user_model()
 
