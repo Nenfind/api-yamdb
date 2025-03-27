@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from api.permissions import IsAuthorOrReadOnly
+from api.permissions import IsOwnerAdminModeratorOrReadOnly
 from api.serializers import CommentSerializer, ReviewsSerializer
 from reviews.models import Review, Title
 
@@ -10,7 +10,7 @@ from reviews.models import Review, Title
 class ReviewsViewSet(viewsets.ModelViewSet):
     """Управление отзывами на произведения."""
     serializer_class = ReviewsSerializer
-    permission_classes = (IsAuthorOrReadOnly, IsAuthenticatedOrReadOnly)
+    permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
 
     def get_title(self):
         """Возвращает произведение по id из URL."""
@@ -28,7 +28,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 class CommentsViewSet(viewsets.ModelViewSet):
     """Управление комментариями к отзывам."""
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthorOrReadOnly, IsAuthenticatedOrReadOnly)
+    permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
 
     def get_review(self):
         """Возвращает отзыв по id из URL """
