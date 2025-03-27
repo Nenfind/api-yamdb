@@ -6,11 +6,11 @@ User = get_user_model()
 
 
 class Title(models.Model):
-    name = models.TextField(default='Что то')
+    name = models.TextField('Название произведения', default='Что то')
 
 
 class Review(models.Model):
-    """Отзывы к произведению."""
+    """Отзыв к произведению."""
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -34,6 +34,8 @@ class Review(models.Model):
 
     class Meta:
         ordering = ('-pub_date',)
+        verbose_name = 'отзыв'
+        verbose_name_plural = 'Отзывы'
         constraints = (
             models.UniqueConstraint(
                 fields=('author', 'title'),
@@ -58,6 +60,9 @@ class Review(models.Model):
         rating_title, _ = RatingTitle.objects.get_or_create(title_id=title_id)
         rating_title.update_rating()
 
+    def __str__(self):
+        return f'Отзыв от {self.author} на {self.title} - оценка {self.score}'
+
 
 class RatingTitle(models.Model):
     """Рейтинг на основе отзывов."""
@@ -74,6 +79,10 @@ class RatingTitle(models.Model):
         default=None
     )
 
+    class Meta:
+        verbose_name = 'рейтинг'
+        verbose_name_plural = 'Рейтинги'
+
     def update_rating(self):
         """Обновляет рейтинг на основе отзывов."""
         reviews = self.title.reviews.all()
@@ -83,6 +92,9 @@ class RatingTitle(models.Model):
         else:
             self.rating = None
         self.save()
+
+    def __str__(self):
+        return f'Рейтинг {self.rating} для {self.title}'
 
 
 class Comment(models.Model):
@@ -102,4 +114,9 @@ class Comment(models.Model):
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
+        verbose_name = 'коментарий'
+        verbose_name_plural = 'Коментарии'
         ordering = ('-pub_date',)
+
+    def __str__(self):
+        return f'Комментарий от {self.author} к отзыву {self.review.id}'
