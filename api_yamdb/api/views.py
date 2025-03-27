@@ -1,13 +1,16 @@
 """Представления для категорий, жанров и произведений."""
+from django.core.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from rest_framework import (viewsets, generics, permissions,
                             status, filters)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
-from .permissions import IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly
+from .permissions import IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly, IsAdmin
 from .filters import TitleFilter
 from api.serializers import (CommentSerializer, ReviewsSerializer,
                              AdminUserSerializer, TokenCreationSerializer,
@@ -72,6 +75,20 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = AdminUserSerializer
     lookup_field = 'username'
+    permission_classes = (IsAdmin,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ['=username']
+    http_method_names = ('get', 'post', 'patch', 'delete')
+
+    @action(detail=False, methods=['get', 'patch'], permission_classes=(IsAuthenticated,))
+    def me(self, request):
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
 
 class UserCreateAPIView(generics.CreateAPIView):
@@ -113,6 +130,12 @@ class UserCreateAPIView(generics.CreateAPIView):
             fail_silently=True,
         )
 
+    def put(self, request, *args, **kwargs):
+        return Response(
+            {'detail': 'Method "PUT" not allowed.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
 
 class TokenObtainView(generics.CreateAPIView):
     """Получение токена по никнейму и коду подтверждения."""
@@ -121,8 +144,6 @@ class TokenObtainView(generics.CreateAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, *args, **kwargs):
-        print(request.data)
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         token_data = serializer.save()

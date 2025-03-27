@@ -1,19 +1,19 @@
 """Сериализаторы для категорий, жанров и произведений."""
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 
-from .models import Category, Genre, Title
-from reviews.models import Comment, Review
+from reviews.models import Comment, Review, Category, Genre, Title
 
 User = get_user_model()
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
-    """Сереализтор для работы с моделью отзыв."""
+    """Сериализатор для работы с моделью отзыв."""
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -36,7 +36,8 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сереализтор для работы с моделью коментарий."""
+    """Сериализатор для работы с моделью комментарий."""
+
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
@@ -61,6 +62,11 @@ class AdminUserSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'role', 'first_name', 'last_name', 'bio',
         )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'me' in self.context.get('request').path:
+            self.fields['role'].read_only = True
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
@@ -100,7 +106,7 @@ class TokenCreationSerializer(serializers.Serializer):
     def validate(self, data):
         user = get_object_or_404(User, username=data['username'])
         if user.confirmation_code != data['confirmation_code']:
-            raise AuthenticationFailed("Неправильный код подтверждения.")
+            raise ValidationError("Неправильный код подтверждения.")
         return data
 
     def create(self, validated_data):

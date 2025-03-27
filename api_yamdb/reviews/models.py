@@ -1,14 +1,16 @@
 from random import randint
 
-from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class UserManUser = get_user_model()
-ager(BaseUserManager):
+User = get_user_model()
+
+
+class UserManager(BaseUserManager):
     """Менеджер пользователей."""
 
     def _create_user(self, email, username, **extra_fields):
@@ -65,7 +67,73 @@ class User(AbstractUser):
         help_text='Роль пользователя.'
     )
 
-User = get_user_model()
+
+class Category(models.Model):
+    """Модель категории произведения."""
+    name = models.CharField(max_length=256, blank=False)
+    slug = models.SlugField(unique=True, max_length=50)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        """Мета-класс для категории."""
+        ordering = ('name',)
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+
+
+class Genre(models.Model):
+    """Модель жанра произведения."""
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(unique=True, max_length=50)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        """Мета-класс для жанра."""
+        ordering = ('name',)
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+
+
+class Title(models.Model):
+    """Модель произведения."""
+    name = models.CharField(max_length=256)
+    year = models.PositiveSmallIntegerField()
+    rating = models.IntegerField(null=True, blank=True)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+    genre = models.ManyToManyField(
+        Genre,
+        through='GenreTitle',
+        related_name='titles'
+    )
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        """Мета-класс для произведения."""
+        ordering = ('name',)
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+
+
+class GenreTitle(models.Model):
+    """Связь между произведениями и жанрами."""
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+
+    class Meta:
+        """Мета-класс для связи жанров и произведений."""
+        verbose_name = 'Связь жанра и произведения'
+        verbose_name_plural = 'Связи жанров и произведений'
 
 
 class Review(models.Model):
@@ -179,4 +247,3 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'Комментарий от {self.author} к отзыву {self.review.id}'
-      
