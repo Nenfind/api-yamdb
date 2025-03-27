@@ -1,8 +1,8 @@
 from rest_framework import permissions
 
 
-class AdminOrReadOnly(permissions.BasePermission):
-    """Permits for owners of an object to modify it."""
+class AdminOrOwnerOrReadOnly(permissions.BasePermission):
+    """Запрещает изменения всем, кроме администратора и владельца объекта."""
 
     def has_permission(self, request, view):
         return (

@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -13,7 +12,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+            'username', 'email', 'role', 'first_name', 'last_name', 'bio',
         )
 
     def create(self, validated_data):
@@ -23,6 +22,10 @@ class AdminUserSerializer(serializers.ModelSerializer):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError(
                 'Пользователь с таким никнеймом уже существует.'
+            )
+        if value == 'me':
+            raise serializers.ValidationError(
+                'Нельзя создать пользователя с никнеймом "me"!'
             )
         return value
 
@@ -35,12 +38,15 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 
 class PublicUserSerializer(AdminUserSerializer):
+    """Сериализатор для пользователей с укороченным выводом"""
 
     class Meta(AdminUserSerializer.Meta):
         fields = ('username', 'email')
 
 
 class TokenCreationSerializer(serializers.Serializer):
+    """Сериализатор для выдачи токенов"""
+
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 

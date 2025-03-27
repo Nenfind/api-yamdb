@@ -1,21 +1,23 @@
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
-
 from rest_framework import viewsets, generics, permissions, mixins, status
 from rest_framework.response import Response
-from rest_framework_simplejwt.serializers import TokenObtainSerializer
 
 from .serializers import AdminUserSerializer, TokenCreationSerializer, PublicUserSerializer
 
 User = get_user_model()
 
+
 class UserViewSet(viewsets.ModelViewSet):
+    """Вьюсет для управления пользователями."""
+
     queryset = User.objects.all()
     serializer_class = AdminUserSerializer
-
+    lookup_field = 'username'
 
 class UserCreateAPIView(generics.CreateAPIView):
+    """Самостоятельная регистрация пользователей."""
+
     queryset = User.objects.all()
     serializer_class = PublicUserSerializer
     permission_classes = (permissions.AllowAny,)
@@ -52,10 +54,14 @@ class UserCreateAPIView(generics.CreateAPIView):
         )
 
 class TokenObtainView(generics.CreateAPIView):
+    """Получение токена по никнейму и коду подтверждения."""
+
     serializer_class = TokenCreationSerializer
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, *args, **kwargs):
+        print(request.data)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         token_data = serializer.save()
