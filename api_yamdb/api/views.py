@@ -1,13 +1,20 @@
+"""Представления для категорий, жанров и произведений."""
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from rest_framework import viewsets, generics, permissions, mixins, status
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework import (viewsets, generics, permissions,
+                            status, filters)
 from rest_framework.response import Response
 
-from api.permissions import IsOwnerAdminModeratorOrReadOnly
-from api.serializers import CommentSerializer, ReviewsSerializer, AdminUserSerializer, TokenCreationSerializer, PublicUserSerializer
-from reviews.models import Review, Title
+from .permissions import IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly
+from .filters import TitleFilter
+from api.serializers import (CommentSerializer, ReviewsSerializer,
+                             AdminUserSerializer, TokenCreationSerializer,
+                             PublicUserSerializer, CategorySerializer,
+                             GenreSerializer, TitleSerializer)
+from reviews.models import Review, Category, Genre, Title
+
 
 User = get_user_model()
 
@@ -58,12 +65,14 @@ class CommentsViewSet(viewsets.ModelViewSet):
             review=review
         )
 
+
 class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
 
     queryset = User.objects.all()
     serializer_class = AdminUserSerializer
     lookup_field = 'username'
+
 
 class UserCreateAPIView(generics.CreateAPIView):
     """Самостоятельная регистрация пользователей."""
@@ -84,7 +93,8 @@ class UserCreateAPIView(generics.CreateAPIView):
             )
             self.send_email(user)
             return Response(
-                {'username': request.data.get('username'), 'email': request.data.get('email')},
+                {'username': request.data.get(
+                    'username'), 'email': request.data.get('email')},
                 status=status.HTTP_200_OK
             )
         except User.DoesNotExist:
@@ -103,6 +113,7 @@ class UserCreateAPIView(generics.CreateAPIView):
             fail_silently=True,
         )
 
+
 class TokenObtainView(generics.CreateAPIView):
     """Получение токена по никнейму и коду подтверждения."""
 
@@ -116,3 +127,32 @@ class TokenObtainView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         token_data = serializer.save()
         return Response(token_data)
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    """ViewSet для категорий."""
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAdminOrReadOnly]
+    lookup_field = 'slug'
+    filter_backends = [filters.SearchFilter]
+    search_fields = ('name',)
+
+
+class GenreViewSet(viewsets.ModelViewSet):
+    """ViewSet для жанров."""
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    lookup_field = 'slug'
+    filter_backends = [filters.SearchFilter]
+    search_fields = ('name',)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """ViewSet для произведений."""
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TitleFilter
