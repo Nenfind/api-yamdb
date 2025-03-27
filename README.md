@@ -140,4 +140,4 @@ GET http://127.0.0.1:8000/api/v1/titles/{title_id}/reviews/{review_id}/
 
 [![GitHub](https://img.shields.io/badge/GitHub-Ди_На_Пак-black?logo=github)](https://github.com/Nenfind)
 
-[![GitHub](https://img.shields.io/badge/GitHub-Ди_На_Пак-black?logo=github)](https://github.com/miron42)
+[![GitHub](https://img.shields.io/badge/GitHub-Никита_Миронов-black?logo=github)](https://github.com/miron42)
