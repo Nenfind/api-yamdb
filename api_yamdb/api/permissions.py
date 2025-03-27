@@ -19,14 +19,14 @@ class IsAdmin(permissions.BasePermission):
     """Разрешает доступ только администраторам."""
 
     def has_permission(self, request, view):
-        return (request.user.is_authenticated and
-                request.user.role == request.user.Role.ADMIN or
-                request.user.is_superuser)
+        return (request.user.is_authenticated 
+                and request.user.role == request.user.Role.ADMIN
+                or request.user.is_superuser)
 
     def has_object_permission(self, request, view, obj):
-        return (request.user.is_authenticated and
-                request.user.role == request.user.Role.ADMIN or
-                request.user.is_superuser)
+        return (request.user.is_authenticated
+                and request.user.role == request.user.Role.ADMIN
+                or request.user.is_superuser)
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):

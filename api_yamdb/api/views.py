@@ -4,13 +4,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from rest_framework import (viewsets, generics, permissions,
-                            status, filters)
+from rest_framework import (
+    viewsets, generics, permissions, status, filters, mixins)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
-from .permissions import IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly, IsAdmin
+from .permissions import (IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly, 
+                          IsAdmin)
 from .filters import TitleFilter
 from api.serializers import (CommentSerializer, ReviewsSerializer,
                              AdminUserSerializer, TokenCreationSerializer,
@@ -24,6 +25,8 @@ User = get_user_model()
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     """Управление отзывами на произведения."""
+    
+    http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
     serializer_class = ReviewsSerializer
     permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
 
@@ -42,6 +45,8 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
 class CommentsViewSet(viewsets.ModelViewSet):
     """Управление комментариями к отзывам."""
+    
+    http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
     serializer_class = CommentSerializer
     permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
 
@@ -96,7 +101,7 @@ class UserCreateAPIView(generics.CreateAPIView):
 
     queryset = User.objects.all()
     serializer_class = PublicUserSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (AllowAny,)
 
     def perform_create(self, serializer):
         user = serializer.save()
@@ -150,21 +155,31 @@ class TokenObtainView(generics.CreateAPIView):
         return Response(token_data)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     """ViewSet для категорий."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = (IsAdminOrReadOnly,)
     lookup_field = 'slug'
     filter_backends = [filters.SearchFilter]
     search_fields = ('name',)
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     """ViewSet для жанров."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = (IsAdminOrReadOnly,)
     lookup_field = 'slug'
     filter_backends = [filters.SearchFilter]
     search_fields = ('name',)
@@ -172,6 +187,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
+    http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = [IsAdminOrReadOnly]

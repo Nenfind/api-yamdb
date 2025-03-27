@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-
 User = get_user_model()
 
 
@@ -66,10 +65,14 @@ class User(AbstractUser):
         default=Role.USER,
         help_text='Роль пользователя.'
     )
+    
+    class Meta:
+        ordering = ('id',)
 
 
 class Category(models.Model):
     """Модель категории произведения."""
+    
     name = models.CharField(max_length=256, blank=False)
     slug = models.SlugField(unique=True, max_length=50)
 
@@ -85,6 +88,7 @@ class Category(models.Model):
 
 class Genre(models.Model):
     """Модель жанра произведения."""
+    
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
 
@@ -127,6 +131,7 @@ class Title(models.Model):
 
 class GenreTitle(models.Model):
     """Связь между произведениями и жанрами."""
+    
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
 
@@ -138,6 +143,7 @@ class GenreTitle(models.Model):
 
 class Review(models.Model):
     """Отзыв к произведению."""
+    
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -193,6 +199,7 @@ class Review(models.Model):
 
 class RatingTitle(models.Model):
     """Рейтинг на основе отзывов."""
+    
     title = models.OneToOneField(
         Title,
         on_delete=models.CASCADE,
@@ -225,14 +232,15 @@ class RatingTitle(models.Model):
 
 
 class Comment(models.Model):
-    """Коментарии к отзывам."""
+    """Комментарии к отзывам."""
+    
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         verbose_name='Отзывы на произведения',
         related_name='comments'
     )
-    text = models.TextField('Текст коментария')
+    text = models.TextField('Текст комментария')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -241,8 +249,8 @@ class Comment(models.Model):
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
-        verbose_name = 'коментарий'
-        verbose_name_plural = 'Коментарии'
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарии'
         ordering = ('-pub_date',)
 
     def __str__(self):
