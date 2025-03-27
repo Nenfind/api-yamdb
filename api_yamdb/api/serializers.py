@@ -36,7 +36,8 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Проверяет, что пользователь не оставлял отзыв на это произведение ранее.
+        Проверяет, что пользователь не оставлял
+        отзыв на это произведение ранее.
         """
         request = self.context.get('request')
         if request and request.method == 'POST':
@@ -166,7 +167,7 @@ class TitleSerializer(serializers.ModelSerializer):
             return obj.title_rating.rating
         return None
 
-      class Meta:
+    class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')

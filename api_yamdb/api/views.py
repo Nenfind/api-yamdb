@@ -1,22 +1,21 @@
 """Представления для категорий, жанров и произведений."""
-from django.core.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from rest_framework import (
-    viewsets, generics, permissions, status, filters, mixins)
+from rest_framework import (viewsets, generics,
+                            permissions, status, filters, mixins)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
-from .permissions import (IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly, 
-                          IsAdmin)
 from .filters import TitleFilter
-from api.serializers import (CommentSerializer, ReviewsSerializer,
-                             AdminUserSerializer, TokenCreationSerializer,
-                             PublicUserSerializer, CategorySerializer,
-                             GenreSerializer, TitleSerializer)
+from .permissions import (IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly,
+                          IsAdmin)
+from .serializers import (CommentSerializer, ReviewsSerializer,
+                          AdminUserSerializer, TokenCreationSerializer,
+                          PublicUserSerializer, CategorySerializer,
+                          GenreSerializer, TitleSerializer)
 from reviews.models import Review, Category, Genre, Title
 
 
@@ -25,7 +24,7 @@ User = get_user_model()
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     """Управление отзывами на произведения."""
-    
+
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
     serializer_class = ReviewsSerializer
     permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
@@ -45,8 +44,9 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
 class CommentsViewSet(viewsets.ModelViewSet):
     """Управление комментариями к отзывам."""
-    
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
+
+    http_method_names = ('get', 'post', 'patch',
+                         'delete', 'head', 'options')
     serializer_class = CommentSerializer
     permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
 
@@ -85,10 +85,15 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ['=username']
     http_method_names = ('get', 'post', 'patch', 'delete')
 
-    @action(detail=False, methods=['get', 'patch'], permission_classes=(IsAuthenticated,))
+    @action(
+        detail=False, methods=['get', 'patch'],
+        permission_classes=(IsAuthenticated,)
+    )
     def me(self, request):
         if request.method == 'PATCH':
-            serializer = self.get_serializer(request.user, data=request.data, partial=True)
+            serializer = self.get_serializer(
+                request.user, data=request.data, partial=True
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
