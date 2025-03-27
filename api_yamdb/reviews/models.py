@@ -13,8 +13,11 @@ class UserManager(BaseUserManager):
         if not username:
             raise ValueError('Необходимо ввести имя пользователя.')
         email = self.normalize_email(email)
-        secret = str(randint(100000, 999999))
-        user = self.model(email=email, username=username, secret=secret, **extra_fields)
+        confirmation_code = str(randint(100000, 999999))
+        user = self.model(
+            email=email, username=username,
+            confirmation_code=confirmation_code, **extra_fields
+        )
         user.save(using=self._db)
         return user
 
@@ -38,7 +41,7 @@ class User(AbstractUser):
     bio = models.TextField('Биография', blank=True)
     email = models.EmailField(unique=True)
     objects = UserManager()
-    secret = models.CharField(
+    confirmation_code = models.CharField(
         'Код подтверждения',
         max_length=6,
         blank=True,

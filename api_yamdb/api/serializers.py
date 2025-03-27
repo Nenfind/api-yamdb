@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
-class UserSerializer(serializers.ModelSerializer):
+class AdminUserSerializer(serializers.ModelSerializer):
     """Сериализатор для пользователей."""
 
     class Meta:
@@ -34,13 +34,19 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
 
+class PublicUserSerializer(AdminUserSerializer):
+
+    class Meta(AdminUserSerializer.Meta):
+        fields = ('username', 'email')
+
+
 class TokenCreationSerializer(serializers.Serializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
         user = get_object_or_404(User, username=data['username'])
-        if user.secret != data['confirmation_code']:
+        if user.confirmation_code != data['confirmation_code']:
             raise AuthenticationFailed("Неправильный код подтверждения.")
         return data
 
