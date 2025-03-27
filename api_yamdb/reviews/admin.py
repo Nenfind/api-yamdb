@@ -1,7 +1,9 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 
 from .models import Title, Comment, Review
 
+User = get_user_model()
 
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
@@ -30,3 +32,11 @@ class ReviewAdmin(admin.ModelAdmin):
         'score',
         'pub_date',
     )
+
+class UserAdmin(admin.ModelAdmin):
+    """Модель админки для управления пользователями"""
+
+    model = User
+    fieldset = ['bio', 'role', 'username', 'email', 'first_name', 'last_name']
+
+admin.site.register(User, UserAdmin)
