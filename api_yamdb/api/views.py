@@ -30,9 +30,7 @@ class UserCreateAPIView(generics.CreateAPIView):
             fail_silently=True,
         )
 
-# class TokenObtainView(generics.CreateAPIView):
-#     serializer_class = TokenCreationSerializer
-class TokenObtainView(mixins.CreateModelMixin, generics.GenericAPIView):
+class TokenObtainView(generics.CreateAPIView):
     serializer_class = TokenCreationSerializer
     permission_classes = (permissions.AllowAny,)
 
