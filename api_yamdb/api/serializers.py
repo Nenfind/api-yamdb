@@ -13,6 +13,7 @@ User = get_user_model()
 
 class ReviewsSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с моделью отзыв."""
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -35,7 +36,8 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор для работы с моделью коментарий."""
+    """Сериализатор для работы с моделью комментарий."""
+
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
