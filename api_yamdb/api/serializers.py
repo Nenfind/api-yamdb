@@ -13,6 +13,7 @@ User = get_user_model()
 
 class ReviewsSerializer(serializers.ModelSerializer):
     """Сериализатор для работы с моделью отзыв."""
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -52,7 +53,8 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор для работы с моделью коментарий."""
+    """Сериализатор для работы с моделью комментарий."""
+
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
@@ -163,8 +165,8 @@ class TitleSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'title_rating'):
             return obj.title_rating.rating
         return None
-    
-    class Meta:
+
+      class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')

@@ -1,11 +1,11 @@
 """Представления для категорий, жанров и произведений."""
+from django.core.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from rest_framework import (
     viewsets, generics, permissions, status, filters, mixins)
-
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -25,6 +25,7 @@ User = get_user_model()
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     """Управление отзывами на произведения."""
+    
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
     serializer_class = ReviewsSerializer
     permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
@@ -44,6 +45,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
 class CommentsViewSet(viewsets.ModelViewSet):
     """Управление комментариями к отзывам."""
+    
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
     serializer_class = CommentSerializer
     permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
