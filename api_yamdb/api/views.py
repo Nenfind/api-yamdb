@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from rest_framework import (viewsets, generics, permissions,
-                            status, filters)
+                            status, filters, serializers)
 from rest_framework.response import Response
 
 from .permissions import IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly
@@ -20,21 +20,24 @@ User = get_user_model()
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
-    """Управление отзывами на произведения."""
+    """API для работы с отзывами."""
     serializer_class = ReviewsSerializer
-    permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
-
-    def get_title(self):
-        """Возвращает произведение по id из URL."""
-        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+    permission_classes = (IsAdminOrReadOnly,)
 
     def get_queryset(self):
-        """Список отзывов текущего произведения."""
-        return self.get_title().reviews.all()
+        """Отзывы для конкретного произведения."""
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        return title.reviews.all()
 
     def perform_create(self, serializer):
-        """Создание отзыва с привязкой к автору и произведению."""
-        serializer.save(author=self.request.user, title=self.get_title())
+        """Создание отзыва с проверкой уникальности."""
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        if Review.objects.filter(
+                title=title, author=self.request.user).exists():
+            raise serializers.ValidationError(
+                'Вы уже оставляли отзыв на это произведение'
+            )
+        serializer.save(author=self.request.user, title=title)
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
@@ -153,6 +156,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter

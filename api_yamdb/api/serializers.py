@@ -125,7 +125,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
+    """Сериализатор для произведений с рейтингом."""
     genre = serializers.SlugRelatedField(
         many=True,
         slug_field='slug',
@@ -135,17 +135,27 @@ class TitleSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Category.objects.all()
     )
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
 
+    def get_rating(self, obj):
+        """Безопасное получение рейтинга."""
+        if hasattr(obj, 'rating_obj') and obj.rating_obj:
+            return obj.rating_obj.rating
+        return None
+
     def to_representation(self, instance):
-        """Преобразование вывода для соответствия Redoc."""
+        """Форматированный вывод для API."""
         rep = super().to_representation(instance)
-        rep['genre'] = [{'name': g.name, 'slug': g.slug}
-                        for g in instance.genre.all()]
+        rep['genre'] = [{
+            'name': genre.name,
+            'slug': genre.slug
+        } for genre in instance.genre.all()]
+
         rep['category'] = {
             'name': instance.category.name,
             'slug': instance.category.slug

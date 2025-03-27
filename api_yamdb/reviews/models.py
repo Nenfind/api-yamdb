@@ -3,6 +3,7 @@ from random import randint
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
+from django.db.models import Avg
 from django.db import models
 
 
@@ -133,91 +134,93 @@ class GenreTitle(models.Model):
 
 
 class Review(models.Model):
-    """Отзыв к произведению."""
+    """Отзыв на произведение с автоматическим расчетом рейтинга."""
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        verbose_name='Произведения',
-        related_name='reviews'
+        related_name='reviews',
+        verbose_name='Произведение'
     )
-    text = models.TextField('Текст отзыва')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор'
     )
+    text = models.TextField('Текст отзыва')
     score = models.PositiveSmallIntegerField(
         'Оценка',
-        validators=(
-            MinValueValidator(1, message='Оценка не может быть меньше 1.'),
-            MaxValueValidator(10, message='Оценка не может быть больше 10.')
-        )
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(10)
+        ]
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
         ordering = ('-pub_date',)
-        verbose_name = 'отзыв'
+        verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
-        constraints = (
+        constraints = [
             models.UniqueConstraint(
-                fields=('author', 'title'),
-                name='unique_author_title'
-            ),
-        )
+                fields=['author', 'title'],
+                name='unique_review_per_author'
+            )
+        ]
 
     def save(self, *args, **kwargs):
-        """При сохранении отзыва обновляем рейтинг."""
+        """Сохраняет отзыв и обновляет рейтинг."""
         super().save(*args, **kwargs)
-        self.update_title_rating(self.title_id)
+        self._update_title_rating()
 
     def delete(self, *args, **kwargs):
-        """При удалении отзыва обновляем рейтинг."""
+        """Удаляет отзыв и обновляет рейтинг."""
         title_id = self.title_id
         super().delete(*args, **kwargs)
-        self.__class__.update_title_rating(title_id)
+        self._update_title_rating(title_id)
 
-    @classmethod
-    def update_title_rating(cls, title_id=None):
-        """Обновляет рейтинг произведения."""
-        rating_title, _ = RatingTitle.objects.get_or_create(title_id=title_id)
-        rating_title.update_rating()
+    def _update_title_rating(self, title_id=None):
+        """Внутренний метод для обновления рейтинга."""
+        title_id = title_id or self.title_id
+        rating, _ = RatingTitle.objects.get_or_create(title_id=title_id)
+        rating.update_rating()
 
     def __str__(self):
-        return f'Отзыв от {self.author} на {self.title} - оценка {self.score}'
+        return f'Отзыв {self.id} от {self.author} (оценка: {self.score})'
 
 
 class RatingTitle(models.Model):
-    """Рейтинг на основе отзывов."""
+    """Рейтинг произведения на основе отзывов."""
     title = models.OneToOneField(
         Title,
         on_delete=models.CASCADE,
-        related_name='title_rating',
-        verbose_name='Произведение',
+        related_name='rating_obj',
+        verbose_name='Произведение'
     )
     rating = models.IntegerField(
-        'Рейтинг',
+        'Средний рейтинг',
         null=True,
         blank=True,
-        default=None
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(10)
+        ]
     )
 
     class Meta:
-        verbose_name = 'рейтинг'
-        verbose_name_plural = 'Рейтинги'
+        verbose_name = 'Рейтинг произведения'
+        verbose_name_plural = 'Рейтинги произведений'
 
     def update_rating(self):
-        """Обновляет рейтинг на основе отзывов."""
-        reviews = self.title.reviews.all()
-        if reviews.exists():
-            avg_rating = reviews.aggregate(models.Avg('score'))['score__avg']
-            self.rating = int(round(avg_rating))
-        else:
-            self.rating = None
+        """Обновляет рейтинг на основе всех отзывов произведения."""
+        avg_rating = self.title.reviews.aggregate(
+            avg_score=Avg('score')
+        )['avg_score']
+
+        self.rating = int(round(avg_rating)) if avg_rating else None
         self.save()
 
     def __str__(self):
-        return f'Рейтинг {self.rating} для {self.title}'
+        return f'Рейтинг {self.rating} для "{self.title}"'
 
 
 class Comment(models.Model):

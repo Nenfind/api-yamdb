@@ -5,12 +5,14 @@ from .models import Title, Comment, Review
 
 User = get_user_model()
 
+
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'name',
     )
+
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
@@ -21,6 +23,7 @@ class CommentAdmin(admin.ModelAdmin):
         'author',
         'pub_date',
     )
+
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
@@ -33,10 +36,12 @@ class ReviewAdmin(admin.ModelAdmin):
         'pub_date',
     )
 
+
 class UserAdmin(admin.ModelAdmin):
     """Модель админки для управления пользователями"""
 
     model = User
     fieldset = ['bio', 'role', 'username', 'email', 'first_name', 'last_name']
+
 
 admin.site.register(User, UserAdmin)
