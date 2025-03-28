@@ -1,23 +1,37 @@
 """Представления для категорий, жанров и произведений."""
-from django_filters.rest_framework import DjangoFilterBackend
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from rest_framework import (viewsets, generics,
-                            permissions, status, filters, mixins)
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import (
+    filters,
+    generics,
+    mixins,
+    permissions,
+    status,
+    viewsets
+)
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.decorators import action
 
+from reviews.models import Category, Genre, Review, Title
 from .filters import TitleFilter
-from .permissions import (IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly,
-                          IsAdmin)
-from .serializers import (CommentSerializer, ReviewsSerializer,
-                          AdminUserSerializer, TokenCreationSerializer,
-                          PublicUserSerializer, CategorySerializer,
-                          GenreSerializer, TitleSerializer)
-from reviews.models import Review, Category, Genre, Title
-
+from .permissions import (
+    IsAdmin,
+    IsAdminOrReadOnly,
+    IsOwnerAdminModeratorOrReadOnly
+)
+from .serializers import (
+    AdminUserSerializer,
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    PublicUserSerializer,
+    ReviewsSerializer,
+    TitleSerializer,
+    TokenCreationSerializer
+)
 
 User = get_user_model()
 
@@ -82,7 +96,7 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
-    search_fields = ['=username']
+    search_fields = ('=username',)
     http_method_names = ('get', 'post', 'patch', 'delete')
 
     @action(
@@ -167,11 +181,12 @@ class CategoryViewSet(
     viewsets.GenericViewSet,
 ):
     """ViewSet для категорий."""
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     lookup_field = 'slug'
-    filter_backends = [filters.SearchFilter]
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
 
@@ -182,19 +197,21 @@ class GenreViewSet(
     viewsets.GenericViewSet,
 ):
     """ViewSet для жанров."""
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     lookup_field = 'slug'
-    filter_backends = [filters.SearchFilter]
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
+
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = [IsAdminOrReadOnly]
-    filter_backends = [DjangoFilterBackend]
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
