@@ -8,7 +8,7 @@ from django.core.validators import (
 )
 from django.db import models
 
-from .constants import ROLE_MIN_LENGTH, USERNAME_MAX_LENGTH
+from .constants import ROLE_MIN_LENGTH, USERNAME_MAX_LENGTH, MIN_COUNT_SCORE, MAX_COUNT_SCORE
 from .validators import validate_username
 
 
@@ -145,8 +145,14 @@ class Review(models.Model):
     score = models.PositiveSmallIntegerField(
         'Оценка',
         validators=(
-            MinValueValidator(1, message='Оценка не может быть меньше 1.'),
-            MaxValueValidator(10, message='Оценка не может быть больше 10.')
+            MinValueValidator(
+                MIN_COUNT_SCORE,
+                message='Оценка не может быть меньше 1.'
+            ),
+            MaxValueValidator(
+                MAX_COUNT_SCORE,
+                message='Оценка не может быть больше 10.'
+            )
         )
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
