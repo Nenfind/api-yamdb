@@ -4,11 +4,10 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import (
     MaxValueValidator,
     MinValueValidator,
-    ValidationError
 )
 from django.db import models
 
-from .constants import ROLE_MIN_LENGTH, USERNAME_MAX_LENGTH
+from .constants import NAME_MAX_LENGTH, ROLE_MIN_LENGTH, SLUG_MAX_LENGTH, USERNAME_MAX_LENGTH
 from .validators import validate_username
 
 class User(AbstractUser):
@@ -56,8 +55,8 @@ class User(AbstractUser):
 class Category(models.Model):
     """Модель категории произведения."""
 
-    name = models.CharField(max_length=256, blank=False)
-    slug = models.SlugField(unique=True, max_length=50)
+    name = models.CharField(max_length=NAME_MAX_LENGTH, blank=False)
+    slug = models.SlugField(unique=True, max_length=SLUG_MAX_LENGTH)
 
     def __str__(self):
         return self.name
@@ -72,8 +71,8 @@ class Category(models.Model):
 class Genre(models.Model):
     """Модель жанра произведения."""
 
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(unique=True, max_length=50)
+    name = models.CharField(max_length=NAME_MAX_LENGTH)
+    slug = models.SlugField(unique=True, max_length=SLUG_MAX_LENGTH)
 
     def __str__(self):
         return self.name
@@ -88,7 +87,7 @@ class Genre(models.Model):
 class Title(models.Model):
     """Модель произведения."""
 
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=NAME_MAX_LENGTH)
     year = models.PositiveSmallIntegerField()
     rating = models.IntegerField(null=True, blank=True)
     category = models.ForeignKey(
