@@ -45,15 +45,13 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        if self.role == 'admin' or self.is_superuser or self.is_staff:
-            return True
-        return False
+        return (self.role == self.Role.ADMIN
+                or self.is_superuser
+                or self.is_staff)
 
     @property
     def is_moderator(self):
-        if self.role == 'moderator' or self.is_admin:
-            return True
-        return False
+        return self.role == self.Role.MODERATOR
 
 
 class CategoryGenreBaseModel(models.Model):
@@ -73,7 +71,7 @@ class CategoryGenreBaseModel(models.Model):
 class Category(CategoryGenreBaseModel):
     """Модель категории произведения."""
 
-    class Meta:
+    class Meta(CategoryGenreBaseModel.Meta):
         """Мета-класс для категории."""
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
@@ -82,7 +80,7 @@ class Category(CategoryGenreBaseModel):
 class Genre(CategoryGenreBaseModel):
     """Модель жанра произведения."""
 
-    class Meta:
+    class Meta(CategoryGenreBaseModel.Meta):
         """Мета-класс для жанра."""
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'

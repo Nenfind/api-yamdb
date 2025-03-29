@@ -4,10 +4,10 @@ from api.permissions import IsAdminOrReadOnly
 
 
 class CategoryGenreViewSetBase(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
+        mixins.CreateModelMixin,
+        mixins.ListModelMixin,
+        mixins.DestroyModelMixin,
+        viewsets.GenericViewSet,
 ):
     """Основа для вьюсетов категорий и жанров."""
 

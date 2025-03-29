@@ -9,7 +9,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
-from api.constants import MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME
+from .constants import MAX_LENGTH_EMAIL
+from reviews.constants import USERNAME_MAX_LENGTH
 from reviews.models import Category, Comment, Genre, Review, Title
 from reviews.validators import validate_username
 
@@ -85,19 +86,16 @@ class PublicUserSerializer(serializers.Serializer):
     """Сериализатор для самостоятельной регистрации пользователей."""
 
     username = serializers.CharField(
-        max_length=MAX_LENGTH_USERNAME,
+        max_length=USERNAME_MAX_LENGTH,
         validators=(validate_username,),
     )
     email = serializers.EmailField(
         max_length=MAX_LENGTH_EMAIL,
     )
 
-    class Meta(AdminUserSerializer.Meta):
-        fields = ('username', 'email')
-
     def create(self, validated_data):
         try:
-            user, created = User.objects.get_or_create(
+            user, _ = User.objects.get_or_create(
                 username=validated_data['username'],
                 email=validated_data['email'])
             self.send_email(user)
@@ -158,7 +156,7 @@ class GenreSerializer(serializers.ModelSerializer):
         lookup_field = 'slug'
 
 
-class TitleCreateSerializer(serializers.ModelSerializer):
+class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для произведений."""
 
     genre = serializers.SlugRelatedField(
@@ -178,6 +176,10 @@ class TitleCreateSerializer(serializers.ModelSerializer):
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
+
+    def to_representation(self, instance):
+        serializer = TitleReadSerializer(instance)
+        return serializer.data
 
 
 class TitleReadSerializer(serializers.ModelSerializer):

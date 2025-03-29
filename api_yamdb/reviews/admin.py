@@ -44,11 +44,11 @@ class ReviewAdmin(admin.ModelAdmin):
     )
 
 
-class CustomUserAdmin(UserAdmin):
+class YamdbUserAdmin(UserAdmin):
     """Модель админки для управления пользователями"""
 
     model = User
     fieldset = ['bio', 'role', 'username', 'email', 'first_name', 'last_name']
 
 
-admin.site.register(User, CustomUserAdmin)
+admin.site.register(User, YamdbUserAdmin)

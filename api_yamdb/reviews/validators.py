@@ -16,9 +16,8 @@ def validate_username(username):
             'Нельзя создать пользователя с никнеймом me!'
         )
 
-    pattern = r'^[\w.@+-]+\Z'
-    if not re.fullmatch(pattern, username):
-        invalid_chars = re.sub(r'[\w.@+-]', '', username)
+    invalid_chars = re.sub(r'[\w.@+-]', '', username)
+    if invalid_chars:
         raise ValidationError(
             f'Недопустимые символы в имени: {invalid_chars}. '
             'Можно использовать только буквы, цифры, и символы @/./+/-/_.'

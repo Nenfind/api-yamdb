@@ -7,7 +7,6 @@ from rest_framework import (
     filters,
     generics,
     permissions,
-    status,
     viewsets
 )
 from rest_framework.decorators import action
@@ -29,7 +28,7 @@ from .serializers import (
     GenreSerializer,
     PublicUserSerializer,
     ReviewsSerializer,
-    TitleCreateSerializer, TitleReadSerializer,
+    TitleSerializer,
     TokenCreationSerializer
 )
 from .viewsets import CategoryGenreViewSetBase
@@ -124,10 +123,9 @@ class UserCreateAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         serializer = PublicUserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class TokenObtainView(generics.CreateAPIView):
@@ -161,19 +159,17 @@ class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для произведений."""
 
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
-    queryset = Title.objects.all()
     permission_classes = (IsAdminOrReadOnly,)
+    queryset = Title.objects.select_related(
+        'category'
+    ).annotate(
+        rating=Avg('reviews__score')
+    ).prefetch_related(
+        'genre'
+    ).order_by(
+        'name', 'year'
+    )
+
+    serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        queryset = queryset.annotate(
-            rating=Avg('reviews__score')
-        ).select_related('category').prefetch_related('genre').order_by('id')
-        return queryset
-
-    def get_serializer_class(self):
-        if self.action in ('create', 'update', 'partial_update'):
-            return TitleCreateSerializer
-        return TitleReadSerializer
