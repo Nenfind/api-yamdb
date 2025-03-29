@@ -11,6 +11,7 @@ from django.db import models
 from .constants import ROLE_MIN_LENGTH, USERNAME_MAX_LENGTH
 from .validators import validate_username
 
+
 class User(AbstractUser):
     """Класс пользователей."""
 
@@ -52,6 +53,7 @@ class User(AbstractUser):
             or self.is_admin):
             return True
         return False
+
 
 class Category(models.Model):
     """Модель категории произведения."""
@@ -160,59 +162,8 @@ class Review(models.Model):
             ),
         )
 
-    def save(self, *args, **kwargs):
-        """При сохранении отзыва обновляем рейтинг."""
-        super().save(*args, **kwargs)
-        self.update_title_rating(self.title_id)
-
-    def delete(self, *args, **kwargs):
-        """При удалении отзыва обновляем рейтинг."""
-        title_id = self.title_id
-        super().delete(*args, **kwargs)
-        self.__class__.update_title_rating(title_id)
-
-    @classmethod
-    def update_title_rating(cls, title_id=None):
-        """Обновляет рейтинг произведения."""
-        rating_title, _ = RatingTitle.objects.get_or_create(title_id=title_id)
-        rating_title.update_rating()
-
     def __str__(self):
         return f'Отзыв от {self.author} на {self.title} - оценка {self.score}'
-
-
-class RatingTitle(models.Model):
-    """Рейтинг на основе отзывов."""
-
-    title = models.OneToOneField(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='title_rating',
-        verbose_name='Произведение',
-    )
-    rating = models.IntegerField(
-        'Рейтинг',
-        null=True,
-        blank=True,
-        default=None
-    )
-
-    class Meta:
-        verbose_name = 'рейтинг'
-        verbose_name_plural = 'Рейтинги'
-
-    def update_rating(self):
-        """Обновляет рейтинг на основе отзывов."""
-        reviews = self.title.reviews.all()
-        if reviews.exists():
-            avg_rating = reviews.aggregate(models.Avg('score'))['score__avg']
-            self.rating = int(round(avg_rating))
-        else:
-            self.rating = None
-        self.save()
-
-    def __str__(self):
-        return f'Рейтинг {self.rating} для {self.title}'
 
 
 class Comment(models.Model):
