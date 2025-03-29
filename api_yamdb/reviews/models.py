@@ -1,53 +1,25 @@
 from random import randint
 
-from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator,
+    ValidationError
+)
 from django.db import models
 
-
-class UserManager(BaseUserManager):
-    """Менеджер пользователей."""
-
-    def _create_user(self, email, username, **extra_fields):
-        if not email:
-            raise ValueError('Необходимо ввести электронную почту.')
-        if not username:
-            raise ValueError('Необходимо ввести имя пользователя.')
-        email = self.normalize_email(email)
-        confirmation_code = str(randint(100000, 999999))
-        user = self.model(
-            email=email, username=username,
-            confirmation_code=confirmation_code, **extra_fields
-        )
-        user.save(using=self._db)
-        return user
-
-    def create_user(self, email, username, **extra_fields):
-        return self._create_user(email, username, **extra_fields)
-
-    def create_superuser(self, email, username, **extra_fields):
-        superuser_fields = {
-            'is_staff': True,
-            'is_superuser': True,
-            'role': User.Role.ADMIN
-        }
-        superuser_fields.update(extra_fields)
-
-        return self._create_user(email, username, **superuser_fields)
-
+from .constants import ROLE_MIN_LENGTH, USERNAME_MAX_LENGTH
+from .validators import validate_username
 
 class User(AbstractUser):
     """Класс пользователей."""
 
     bio = models.TextField('Биография', blank=True)
     email = models.EmailField(unique=True)
-    objects = UserManager()
-    confirmation_code = models.CharField(
-        'Код подтверждения',
-        max_length=6,
-        blank=True,
-        help_text='6-значный код подтверждения',
+    username = models.CharField(
+        unique=True,
+        max_length=USERNAME_MAX_LENGTH,
+        validators=[validate_username],
     )
 
     class Role(models.TextChoices):
@@ -57,15 +29,29 @@ class User(AbstractUser):
 
     role = models.CharField(
         'роль',
-        max_length=20,
+        max_length=max([len(role) for role in Role.choices]) + ROLE_MIN_LENGTH,
         choices=Role.choices,
         default=Role.USER,
         help_text='Роль пользователя.'
     )
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('username', 'email')
 
+    @property
+    def is_admin(self):
+        if (self.role == 'admin'
+            or self.is_superuser
+            or self.is_staff):
+            return True
+        return False
+
+    @property
+    def is_moderator(self):
+        if (self.role == 'moderator'
+            or self.is_admin):
+            return True
+        return False
 
 class Category(models.Model):
     """Модель категории произведения."""
