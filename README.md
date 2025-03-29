@@ -27,7 +27,7 @@
 ## Стек технологий.
 
 ### Backend:
- - Python
+ - Python 3.12
  - Django
  - Django REST Framework (DRF)
 ### База данных:
@@ -131,13 +131,8 @@ GET http://127.0.0.1:8000/api/v1/titles/{title_id}/reviews/{review_id}/
 "pub_date": "2019-08-24T14:15:22Z"
 }
 ```
-## Команда проекта
+## Проект разработан:
 
-Проект разработан: **Александр Кузнецов**, **Ди На Пак**, **Никита Миронов**.
-Вы можете найти больше информации о разработчиках и их проектах на GitHub:
-
-[![GitHub](https://img.shields.io/badge/GitHub-Александр_Кузнецов-black?logo=github)](https://github.com/alexander9876543210)
-
-[![GitHub](https://img.shields.io/badge/GitHub-Ди_На_Пак-black?logo=github)](https://github.com/Nenfind)
-
-[![GitHub](https://img.shields.io/badge/GitHub-Никита_Миронов-black?logo=github)](https://github.com/miron42)
+ - [**Александр Кузнецов**](https://github.com/alexander9876543210)  
+ - [**Ди На Пак**](https://github.com/Nenfind)  
+ - [**Никита Миронов**](https://github.com/miron42)
