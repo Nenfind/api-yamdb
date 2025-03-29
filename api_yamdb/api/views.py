@@ -34,7 +34,6 @@ from .serializers import (
     TitleSerializer,
     TokenCreationSerializer
 )
-from .viewsets import CategoryGenreViewSetBase
 
 User = get_user_model()
 
@@ -145,18 +144,36 @@ class TokenObtainView(generics.CreateAPIView):
         return Response(token_data)
 
 
-class CategoryViewSet(CategoryGenreViewSetBase):
+class CategoryViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     """ViewSet для категорий."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
 
 
-class GenreViewSet(CategoryGenreViewSetBase):
+class GenreViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     """ViewSet для жанров."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
