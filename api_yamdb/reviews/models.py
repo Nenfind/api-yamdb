@@ -128,7 +128,12 @@ class GenreTitle(models.Model):
         """Мета-класс для связи жанров и произведений."""
         verbose_name = 'Связь жанра и произведения'
         verbose_name_plural = 'Связи жанров и произведений'
-
+        constraints = (
+            models.UniqueConstraint(
+                fields=('title', 'genre'),
+                name='unique_title_genre'
+            ),
+        )
 
 class Review(models.Model):
     """Отзыв к произведению."""
