@@ -95,7 +95,6 @@ class Title(models.Model):
         'Год',
         validators=(validate_year,),
     )
-    rating = models.IntegerField(null=True, blank=True)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
