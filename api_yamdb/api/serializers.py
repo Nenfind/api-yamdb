@@ -35,7 +35,6 @@ class ReviewsSerializer(serializers.ModelSerializer):
             'pub_date',
         )
 
-
     def validate(self, data):
         """
         Проверяет, что пользователь не оставлял
@@ -71,7 +70,6 @@ class CommentSerializer(serializers.ModelSerializer):
             'pub_date',
         )
         model = Comment
-        read_only_fields = ('review',)
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -82,6 +80,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'role', 'first_name', 'last_name', 'bio',
         )
+
 
 class PublicUserSerializer(serializers.Serializer):
     """Сериализатор для самостоятельной регистрации пользователей."""
