@@ -68,14 +68,13 @@ class CommentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        model = Comment
         fields = (
             'id',
             'text',
             'author',
             'pub_date',
         )
-        model = Comment
-        read_only_fields = ('review',)
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -86,6 +85,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'role', 'first_name', 'last_name', 'bio',
         )
+
 
 class PublicUserSerializer(serializers.Serializer):
     """Сериализатор для самостоятельной регистрации пользователей."""
@@ -112,7 +112,6 @@ class PublicUserSerializer(serializers.Serializer):
                 'detail': 'Данные username или почта уже заняты.'
             })
         return user
-
 
     def send_email(self, user):
         send_mail(
