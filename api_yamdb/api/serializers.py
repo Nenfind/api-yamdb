@@ -63,13 +63,13 @@ class CommentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        model = Comment
         fields = (
             'id',
             'text',
             'author',
             'pub_date',
         )
-        model = Comment
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -107,7 +107,6 @@ class PublicUserSerializer(serializers.Serializer):
                 'detail': 'Данные username или почта уже заняты.'
             })
         return user
-
 
     def send_email(self, user):
         send_mail(
