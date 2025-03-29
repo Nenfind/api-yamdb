@@ -112,7 +112,6 @@ class Title(models.Model):
         ordering = ('name',)
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
-        
 
     def __str__(self):
         return self.name
@@ -134,6 +133,7 @@ class GenreTitle(models.Model):
                 name='unique_title_genre'
             ),
         )
+
 
 class Review(models.Model):
     """Отзыв к произведению."""
