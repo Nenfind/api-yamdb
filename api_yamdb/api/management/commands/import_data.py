@@ -99,7 +99,6 @@ class Command(BaseCommand):
     def import_reviews(self):
         """Импорт отзывов из review.csv."""
         Review.objects.all().delete()
-        RatingTitle.objects.all().delete()
         with open('static/data/review.csv', encoding='utf-8') as file:
             for row in csv.DictReader(file):
                 try:
