@@ -1,5 +1,3 @@
-from random import randint
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import (
     MaxValueValidator,
@@ -7,7 +5,14 @@ from django.core.validators import (
 )
 from django.db import models
 
-from .constants import MIN_COUNT_SCORE, MAX_COUNT_SCORE, NAME_MAX_LENGTH, ROLE_MIN_LENGTH, SLUG_MAX_LENGTH, USERNAME_MAX_LENGTH
+from .constants import (
+    MAX_COUNT_SCORE,
+    MIN_COUNT_SCORE,
+    NAME_MAX_LENGTH,
+    ROLE_MIN_LENGTH,
+    SLUG_MAX_LENGTH,
+    USERNAME_MAX_LENGTH
+)
 from .validators import validate_username, validate_year
 
 
@@ -19,7 +24,7 @@ class User(AbstractUser):
     username = models.CharField(
         unique=True,
         max_length=USERNAME_MAX_LENGTH,
-        validators=[validate_username],
+        validators=(validate_username,),
     )
 
     class Role(models.TextChoices):
@@ -40,48 +45,45 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        if (self.role == 'admin'
-            or self.is_superuser
-            or self.is_staff):
+        if self.role == 'admin' or self.is_superuser or self.is_staff:
             return True
         return False
 
     @property
     def is_moderator(self):
-        if (self.role == 'moderator'
-            or self.is_admin):
+        if self.role == 'moderator' or self.is_admin:
             return True
         return False
 
 
-class Category(models.Model):
-    """Модель категории произведения."""
+class CategoryGenreBaseModel(models.Model):
+    """Абстрактная модель для категорий и жанров."""
 
-    name = models.CharField(max_length=NAME_MAX_LENGTH, blank=False)
+    name = models.CharField(max_length=NAME_MAX_LENGTH, unique=True)
     slug = models.SlugField(unique=True, max_length=SLUG_MAX_LENGTH)
+
+    class Meta:
+        ordering = ('name',)
+        abstract = True
 
     def __str__(self):
         return self.name
 
+
+class Category(CategoryGenreBaseModel):
+    """Модель категории произведения."""
+
     class Meta:
         """Мета-класс для категории."""
-        ordering = ('name',)
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
-class Genre(models.Model):
+class Genre(CategoryGenreBaseModel):
     """Модель жанра произведения."""
-
-    name = models.CharField(max_length=NAME_MAX_LENGTH)
-    slug = models.SlugField(unique=True, max_length=SLUG_MAX_LENGTH)
-
-    def __str__(self):
-        return self.name
 
     class Meta:
         """Мета-класс для жанра."""
-        ordering = ('name',)
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 

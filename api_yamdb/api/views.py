@@ -1,20 +1,17 @@
 """Представления для категорий, жанров и произведений."""
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
     filters,
     generics,
-    mixins,
     permissions,
     status,
     viewsets
 )
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.db.models import Avg
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -32,7 +29,7 @@ from .serializers import (
     GenreSerializer,
     PublicUserSerializer,
     ReviewsSerializer,
-    TitleSerializer,
+    TitleCreateSerializer, TitleReadSerializer,
     TokenCreationSerializer
 )
 from .viewsets import CategoryGenreViewSetBase
@@ -165,7 +162,6 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
@@ -176,3 +172,8 @@ class TitleViewSet(viewsets.ModelViewSet):
             rating=Avg('reviews__score')
         ).select_related('category').prefetch_related('genre').order_by('id')
         return queryset
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return TitleCreateSerializer
+        return TitleReadSerializer

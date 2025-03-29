@@ -6,7 +6,6 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -112,8 +111,9 @@ class PublicUserSerializer(serializers.Serializer):
         send_mail(
             subject='Код подтверждения YaMDB',
             message=f'Привет, {user.username}!\n\n'
-                    f'Ваш код подтверждения: {default_token_generator.make_token(user)}\n\n'
-                    f'Используйте его для входа в систему.',
+                    'Ваш код подтверждения: '
+                    f'{default_token_generator.make_token(user)}\n\n'
+                    'Используйте его для входа в систему.',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=True,
@@ -158,11 +158,13 @@ class GenreSerializer(serializers.ModelSerializer):
         lookup_field = 'slug'
 
 
-class TitleSerializer(serializers.ModelSerializer):
+class TitleCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для произведений."""
 
     genre = serializers.SlugRelatedField(
         many=True,
+        allow_null=False,
+        allow_empty=False,
         slug_field='slug',
         queryset=Genre.objects.all()
     )
@@ -177,22 +179,15 @@ class TitleSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
 
-    def to_representation(self, instance):
-        """Преобразование вывода для соответствия Redoc."""
-        rep = super().to_representation(instance)
-        rep['genre'] = [{'name': g.name, 'slug': g.slug}
-                        for g in instance.genre.all()]
-        rep['category'] = {
-            'name': instance.category.name,
-            'slug': instance.category.slug
-        }
-        return rep
 
-    def validate_year(self, value):
-        """Проверка, что год выпуска не больше текущего."""
-        current_year = timezone.now().year
-        if value > current_year:
-            raise serializers.ValidationError(
-                'Год выпуска не может быть больше текущего'
-            )
-        return value
+class TitleReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения произведений."""
+
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    rating = serializers.IntegerField(read_only=True, default=None)
+
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
