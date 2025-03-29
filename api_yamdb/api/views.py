@@ -1,5 +1,6 @@
 """Представления для категорий, жанров и произведений."""
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -14,6 +15,7 @@ from rest_framework import (
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from reviews.models import Category, Genre, Review, Title
 from .filters import TitleFilter
@@ -32,6 +34,7 @@ from .serializers import (
     TitleSerializer,
     TokenCreationSerializer
 )
+from .viewsets import CategoryGenreViewSetBase
 
 User = get_user_model()
 
@@ -109,56 +112,24 @@ class UserViewSet(viewsets.ModelViewSet):
                 request.user, data=request.data, partial=True
             )
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(role=self.request.user.role)
             return Response(serializer.data)
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
 
-class UserCreateAPIView(generics.CreateAPIView):
+class UserCreateAPIView(APIView):
     """Самостоятельная регистрация пользователей."""
 
     queryset = User.objects.all()
-    serializer_class = PublicUserSerializer
     permission_classes = (AllowAny,)
 
-    def perform_create(self, serializer):
-        user = serializer.save()
-        self.send_email(user)
-
-    def create(self, request, *args, **kwargs):
-        try:
-            user = User.objects.get(
-                username=request.data.get('username'),
-                email=request.data.get('email')
-            )
-            self.send_email(user)
-            return Response(
-                {'username': request.data.get(
-                    'username'), 'email': request.data.get('email')},
-                status=status.HTTP_200_OK
-            )
-        except User.DoesNotExist:
-            response = super().create(request, *args, **kwargs)
-            response.status_code = status.HTTP_200_OK
-            return response
-
-    def send_email(self, user):
-        send_mail(
-            subject='Код подтверждения YaMDB',
-            message=f'Привет, {user.username}!\n\n'
-                    f'Ваш код подтверждения: {user.confirmation_code}\n\n'
-                    f'Используйте его для входа в систему.',
-            from_email='yamdb@ya.ru',
-            recipient_list=[user.email],
-            fail_silently=True,
-        )
-
-    def put(self, request, *args, **kwargs):
-        return Response(
-            {'detail': 'Method "PUT" not allowed.'},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+    def post(self, request, *args, **kwargs):
+        serializer = PublicUserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TokenObtainView(generics.CreateAPIView):
@@ -174,36 +145,18 @@ class TokenObtainView(generics.CreateAPIView):
         return Response(token_data)
 
 
-class CategoryViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
+class CategoryViewSet(CategoryGenreViewSetBase):
     """ViewSet для категорий."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
 
 
-class GenreViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
+class GenreViewSet(CategoryGenreViewSetBase):
     """ViewSet для жанров."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
 
 
 class TitleViewSet(viewsets.ModelViewSet):

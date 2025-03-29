@@ -1,40 +1,14 @@
 from random import randint
 
-from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator,
+)
 from django.db import models
 
-
-class UserManager(BaseUserManager):
-    """Менеджер пользователей."""
-
-    def _create_user(self, email, username, **extra_fields):
-        if not email:
-            raise ValueError('Необходимо ввести электронную почту.')
-        if not username:
-            raise ValueError('Необходимо ввести имя пользователя.')
-        email = self.normalize_email(email)
-        confirmation_code = str(randint(100000, 999999))
-        user = self.model(
-            email=email, username=username,
-            confirmation_code=confirmation_code, **extra_fields
-        )
-        user.save(using=self._db)
-        return user
-
-    def create_user(self, email, username, **extra_fields):
-        return self._create_user(email, username, **extra_fields)
-
-    def create_superuser(self, email, username, **extra_fields):
-        superuser_fields = {
-            'is_staff': True,
-            'is_superuser': True,
-            'role': User.Role.ADMIN
-        }
-        superuser_fields.update(extra_fields)
-
-        return self._create_user(email, username, **superuser_fields)
+from .constants import NAME_MAX_LENGTH, ROLE_MIN_LENGTH, SLUG_MAX_LENGTH, USERNAME_MAX_LENGTH
+from .validators import validate_username
 
 
 class User(AbstractUser):
@@ -42,12 +16,10 @@ class User(AbstractUser):
 
     bio = models.TextField('Биография', blank=True)
     email = models.EmailField(unique=True)
-    objects = UserManager()
-    confirmation_code = models.CharField(
-        'Код подтверждения',
-        max_length=6,
-        blank=True,
-        help_text='6-значный код подтверждения',
+    username = models.CharField(
+        unique=True,
+        max_length=USERNAME_MAX_LENGTH,
+        validators=[validate_username],
     )
 
     class Role(models.TextChoices):
@@ -57,21 +29,36 @@ class User(AbstractUser):
 
     role = models.CharField(
         'роль',
-        max_length=20,
+        max_length=max([len(role) for role in Role.choices]) + ROLE_MIN_LENGTH,
         choices=Role.choices,
         default=Role.USER,
         help_text='Роль пользователя.'
     )
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('username', 'email')
+
+    @property
+    def is_admin(self):
+        if (self.role == 'admin'
+            or self.is_superuser
+            or self.is_staff):
+            return True
+        return False
+
+    @property
+    def is_moderator(self):
+        if (self.role == 'moderator'
+            or self.is_admin):
+            return True
+        return False
 
 
 class Category(models.Model):
     """Модель категории произведения."""
 
-    name = models.CharField(max_length=256, blank=False)
-    slug = models.SlugField(unique=True, max_length=50)
+    name = models.CharField(max_length=NAME_MAX_LENGTH, blank=False)
+    slug = models.SlugField(unique=True, max_length=SLUG_MAX_LENGTH)
 
     def __str__(self):
         return self.name
@@ -86,8 +73,8 @@ class Category(models.Model):
 class Genre(models.Model):
     """Модель жанра произведения."""
 
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(unique=True, max_length=50)
+    name = models.CharField(max_length=NAME_MAX_LENGTH)
+    slug = models.SlugField(unique=True, max_length=SLUG_MAX_LENGTH)
 
     def __str__(self):
         return self.name
@@ -102,7 +89,7 @@ class Genre(models.Model):
 class Title(models.Model):
     """Модель произведения."""
 
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=NAME_MAX_LENGTH)
     year = models.PositiveSmallIntegerField()
     rating = models.IntegerField(null=True, blank=True)
     category = models.ForeignKey(
@@ -174,59 +161,8 @@ class Review(models.Model):
             ),
         )
 
-    def save(self, *args, **kwargs):
-        """При сохранении отзыва обновляем рейтинг."""
-        super().save(*args, **kwargs)
-        self.update_title_rating(self.title_id)
-
-    def delete(self, *args, **kwargs):
-        """При удалении отзыва обновляем рейтинг."""
-        title_id = self.title_id
-        super().delete(*args, **kwargs)
-        self.__class__.update_title_rating(title_id)
-
-    @classmethod
-    def update_title_rating(cls, title_id=None):
-        """Обновляет рейтинг произведения."""
-        rating_title, _ = RatingTitle.objects.get_or_create(title_id=title_id)
-        rating_title.update_rating()
-
     def __str__(self):
         return f'Отзыв от {self.author} на {self.title} - оценка {self.score}'
-
-
-class RatingTitle(models.Model):
-    """Рейтинг на основе отзывов."""
-
-    title = models.OneToOneField(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='title_rating',
-        verbose_name='Произведение',
-    )
-    rating = models.IntegerField(
-        'Рейтинг',
-        null=True,
-        blank=True,
-        default=None
-    )
-
-    class Meta:
-        verbose_name = 'рейтинг'
-        verbose_name_plural = 'Рейтинги'
-
-    def update_rating(self):
-        """Обновляет рейтинг на основе отзывов."""
-        reviews = self.title.reviews.all()
-        if reviews.exists():
-            avg_rating = reviews.aggregate(models.Avg('score'))['score__avg']
-            self.rating = int(round(avg_rating))
-        else:
-            self.rating = None
-        self.save()
-
-    def __str__(self):
-        return f'Рейтинг {self.rating} для {self.title}'
 
 
 class Comment(models.Model):

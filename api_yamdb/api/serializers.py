@@ -1,12 +1,18 @@
 """Сериализаторы для категорий, жанров и произведений."""
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 
+from api.constants import MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME
 from reviews.models import Category, Comment, Genre, Review, Title
+from reviews.validators import validate_username
 
 User = get_user_model()
 
@@ -62,14 +68,13 @@ class CommentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        model = Comment
         fields = (
             'id',
             'text',
             'author',
             'pub_date',
         )
-        model = Comment
-        read_only_fields = ('review',)
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -81,38 +86,43 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'username', 'email', 'role', 'first_name', 'last_name', 'bio',
         )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if 'me' in self.context.get('request').path:
-            self.fields['role'].read_only = True
 
-    def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+class PublicUserSerializer(serializers.Serializer):
+    """Сериализатор для самостоятельной регистрации пользователей."""
 
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError(
-                'Пользователь с таким никнеймом уже существует.'
-            )
-        if value == 'me':
-            raise serializers.ValidationError(
-                'Нельзя создать пользователя с никнеймом "me"!'
-            )
-        return value
-
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError(
-                'Этот электронный адрес уже занят.'
-            )
-        return value
-
-
-class PublicUserSerializer(AdminUserSerializer):
-    """Сериализатор для пользователей с укороченным выводом"""
+    username = serializers.CharField(
+        max_length=MAX_LENGTH_USERNAME,
+        validators=(validate_username,),
+    )
+    email = serializers.EmailField(
+        max_length=MAX_LENGTH_EMAIL,
+    )
 
     class Meta(AdminUserSerializer.Meta):
         fields = ('username', 'email')
+
+    def create(self, validated_data):
+        try:
+            user, created = User.objects.get_or_create(
+                username=validated_data['username'],
+                email=validated_data['email'])
+            self.send_email(user)
+        except IntegrityError:
+            raise serializers.ValidationError({
+                'detail': 'Данные username или почта уже заняты.'
+            })
+        return user
+
+    def send_email(self, user):
+        send_mail(
+            subject='Код подтверждения YaMDB',
+            message=f'Привет, {user.username}!\n\n'
+                    f'Ваш код подтверждения: {default_token_generator.make_token(user)}\n\n'
+                    f'Используйте его для входа в систему.',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
 
 
 class TokenCreationSerializer(serializers.Serializer):
@@ -123,14 +133,16 @@ class TokenCreationSerializer(serializers.Serializer):
 
     def validate(self, data):
         user = get_object_or_404(User, username=data['username'])
-        if user.confirmation_code != data['confirmation_code']:
+        if not default_token_generator.check_token(
+                user, data['confirmation_code']
+        ):
             raise ValidationError("Неправильный код подтверждения.")
         return data
 
     def create(self, validated_data):
         user = get_object_or_404(User, username=validated_data['username'])
-        refresh = RefreshToken.for_user(user)
-        return {'token': str(refresh.access_token)}
+        access = AccessToken.for_user(user)
+        return {'token': str(access)}
 
 
 class CategorySerializer(serializers.ModelSerializer):

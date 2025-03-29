@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin
 
 from .models import Comment, Review, Title
 
@@ -43,11 +44,11 @@ class ReviewAdmin(admin.ModelAdmin):
     )
 
 
-class UserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(UserAdmin):
     """Модель админки для управления пользователями"""
 
     model = User
     fieldset = ['bio', 'role', 'username', 'email', 'first_name', 'last_name']
 
 
-admin.site.register(User, UserAdmin)
+admin.site.register(User, CustomUserAdmin)
