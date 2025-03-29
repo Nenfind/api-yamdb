@@ -8,7 +8,7 @@ from django.core.validators import (
 from django.db import models
 
 from .constants import MIN_COUNT_SCORE, MAX_COUNT_SCORE, NAME_MAX_LENGTH, ROLE_MIN_LENGTH, SLUG_MAX_LENGTH, USERNAME_MAX_LENGTH
-from .validators import validate_username
+from .validators import validate_username, validate_year
 
 
 class User(AbstractUser):
