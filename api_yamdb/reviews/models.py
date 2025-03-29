@@ -9,7 +9,7 @@ from django.core.validators import (
 from django.db import models
 
 from .constants import ROLE_MIN_LENGTH, USERNAME_MAX_LENGTH, MIN_COUNT_SCORE, MAX_COUNT_SCORE
-from .validators import validate_username
+from .validators import validate_username, validate_year
 
 
 class User(AbstractUser):
@@ -90,8 +90,11 @@ class Genre(models.Model):
 class Title(models.Model):
     """Модель произведения."""
 
-    name = models.CharField(max_length=256)
-    year = models.PositiveSmallIntegerField()
+    name = models.CharField('Произведение', max_length=256)
+    year = models.IntegerField(
+        'Год',
+        validators=(validate_year,),
+    )
     rating = models.IntegerField(null=True, blank=True)
     category = models.ForeignKey(
         Category,
@@ -103,16 +106,22 @@ class Title(models.Model):
         through='GenreTitle',
         related_name='titles'
     )
-    description = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return self.name
+    description = models.TextField(blank=True,)
 
     class Meta:
         """Мета-класс для произведения."""
         ordering = ('name',)
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('name', 'genre'),
+                name='unique_name_genre'
+            ),
+        )
+
+    def __str__(self):
+        return self.name
 
 
 class GenreTitle(models.Model):
