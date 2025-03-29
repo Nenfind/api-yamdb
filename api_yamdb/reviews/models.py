@@ -7,7 +7,7 @@ from django.core.validators import (
 )
 from django.db import models
 
-from .constants import NAME_MAX_LENGTH, ROLE_MIN_LENGTH, SLUG_MAX_LENGTH, USERNAME_MAX_LENGTH
+from .constants import MIN_COUNT_SCORE, MAX_COUNT_SCORE, NAME_MAX_LENGTH, ROLE_MIN_LENGTH, SLUG_MAX_LENGTH, USERNAME_MAX_LENGTH
 from .validators import validate_username
 
 
@@ -89,9 +89,11 @@ class Genre(models.Model):
 class Title(models.Model):
     """Модель произведения."""
 
-    name = models.CharField(max_length=NAME_MAX_LENGTH)
-    year = models.PositiveSmallIntegerField()
-    rating = models.IntegerField(null=True, blank=True)
+    name = models.CharField('Произведение', max_length=NAME_MAX_LENGTH)
+    year = models.IntegerField(
+        'Год',
+        validators=(validate_year,),
+    )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -102,16 +104,16 @@ class Title(models.Model):
         through='GenreTitle',
         related_name='titles'
     )
-    description = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return self.name
+    description = models.TextField(blank=True,)
 
     class Meta:
         """Мета-класс для произведения."""
         ordering = ('name',)
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
+
+    def __str__(self):
+        return self.name
 
 
 class GenreTitle(models.Model):
@@ -124,6 +126,12 @@ class GenreTitle(models.Model):
         """Мета-класс для связи жанров и произведений."""
         verbose_name = 'Связь жанра и произведения'
         verbose_name_plural = 'Связи жанров и произведений'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('title', 'genre'),
+                name='unique_title_genre'
+            ),
+        )
 
 
 class Review(models.Model):
@@ -144,8 +152,14 @@ class Review(models.Model):
     score = models.PositiveSmallIntegerField(
         'Оценка',
         validators=(
-            MinValueValidator(1, message='Оценка не может быть меньше 1.'),
-            MaxValueValidator(10, message='Оценка не может быть больше 10.')
+            MinValueValidator(
+                MIN_COUNT_SCORE,
+                message='Оценка не может быть меньше 1.'
+            ),
+            MaxValueValidator(
+                MAX_COUNT_SCORE,
+                message='Оценка не может быть больше 10.'
+            )
         )
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)

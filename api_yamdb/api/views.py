@@ -14,6 +14,7 @@ from rest_framework import (
 )
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.db.models import Avg
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -185,3 +186,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.annotate(
+            rating=Avg('reviews__score')
+        ).select_related('category').prefetch_related('genre').order_by('id')
+        return queryset
