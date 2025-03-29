@@ -35,11 +35,6 @@ class ReviewsSerializer(serializers.ModelSerializer):
             'pub_date',
         )
 
-    def validate_score(self, value):
-        if value < 1 or value > 10:
-            raise serializers.ValidationError('Оценка должна быть от 1 до 10.')
-        return value
-
     def validate(self, data):
         """
         Проверяет, что пользователь не оставлял
@@ -175,12 +170,7 @@ class TitleSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Category.objects.all()
     )
-    rating = serializers.SerializerMethodField()
-
-    def get_rating(self, obj):
-        if hasattr(obj, 'title_rating'):
-            return obj.title_rating.rating
-        return None
+    rating = serializers.IntegerField(read_only=True, default=None)
 
     class Meta:
         model = Title
