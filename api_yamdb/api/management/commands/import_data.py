@@ -3,8 +3,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from reviews.models import (Category, Genre, Title, GenreTitle,
-                            Review, Comment, User)
+from api.models import (Category, Genre, Title, GenreTitle,
+                        Review, Comment, RatingTitle, User)
 
 
 class Command(BaseCommand):
@@ -99,6 +99,7 @@ class Command(BaseCommand):
     def import_reviews(self):
         """Импорт отзывов из review.csv."""
         Review.objects.all().delete()
+        RatingTitle.objects.all().delete()
         with open('static/data/review.csv', encoding='utf-8') as file:
             for row in csv.DictReader(file):
                 try:
