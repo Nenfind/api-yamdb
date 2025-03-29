@@ -27,7 +27,7 @@
 ## Стек технологий.
 
 ### Backend:
- - Python
+ - Python 3.12
  - Django
  - Django REST Framework (DRF)
 ### База данных:
